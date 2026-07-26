@@ -10,7 +10,7 @@ import { REGEX_SCRIPTS } from '../src/regex/regex.js';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => readFileSync(join(root, p), 'utf8');
 
-export const CARD_VERSION = '0.1.0-slice';
+export const CARD_VERSION = '0.5.0-rc1';
 const BOOK_NAME = '网瘾学园·修正日志';
 
 // ---- 世界书条目映射（样例卡 v3 字段全集）----
@@ -96,7 +96,7 @@ export function buildCard() {
 「青禾修正学园」——一所民办网瘾矫治机构。{{user}}是新任园长，抽屉里放着 30 天修正期的考核表，钥匙串上挂着惩戒室的钥匙。五名成年（18-22 岁）入园者被父母以「为你好」的名义送进来。家长们只看「修正值」报表；而报表上，没有「创伤」这一栏。`,
       personality: '', scenario: '', mes_example: '',
       first_mes: firstMes,
-      creator_notes: `切片验证版 ${CARD_VERSION}。依赖：酒馆助手（JS-Slash-Runner）+ 前端渲染开启；MVU 框架由卡内脚本联网加载（jsdelivr 双源）。源仓库：https://github.com/ssrf8/ldfw`,
+      creator_notes: `${CARD_VERSION}（全量内容·验收候选）。依赖：酒馆助手（JS-Slash-Runner）+ 前端渲染开启；MVU 框架由卡内脚本联网加载（jsdelivr 双源）。首次使用请允许本卡的「角色正则」与「角色卡脚本」。源仓库：https://github.com/ssrf8/ldfw`,
       system_prompt: '', post_history_instructions: '',
       tags: ['同层前端', 'MVU', '模拟经营', '群像'],
       creator: 'ssrf8', character_version: CARD_VERSION,
@@ -163,11 +163,35 @@ export function makePng(cardJson) {
   ]);
 }
 
+// ---- 卡绑世界书独立文件（ST worlds/ 格式，与 character_book 同源同步）----
+export function buildWorldFile() {
+  const entries = {};
+  buildEntries().forEach((e, i) => {
+    entries[i] = {
+      uid: i, key: [], keysecondary: [],
+      comment: e.name, content: e.content,
+      constant: !!e.constant, vectorized: false, selective: true, selectiveLogic: 0,
+      addMemo: true, order: e.order, position: e.position, disable: !e.enabled,
+      ignoreBudget: false, excludeRecursion: false, preventRecursion: false,
+      matchPersonaDescription: false, matchCharacterDescription: false,
+      matchCharacterPersonality: false, matchCharacterDepthPrompt: false,
+      matchScenario: false, matchCreatorNotes: false, delayUntilRecursion: false,
+      probability: 100, useProbability: true, depth: e.depth ?? 1,
+      outletName: '', group: '', groupOverride: false, groupWeight: 100,
+      scanDepth: null, caseSensitive: null, matchWholeWords: null,
+      useGroupScoring: false, automationId: '', role: 0, sticky: 0, cooldown: 0, delay: 0,
+      displayIndex: i,
+    };
+  });
+  return { entries };
+}
+
 const card = buildCard();
 const json = JSON.stringify(card, null, 1);
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist/网瘾学园.json'), json);
 writeFileSync(join(root, 'dist/网瘾学园.png'), makePng(json));
+writeFileSync(join(root, 'dist/网瘾学园·修正日志.世界书.json'), JSON.stringify(buildWorldFile(), null, 1));
 
 // ---- 载荷一致性自检：从 PNG 读回并与 JSON 深比对 ----
 const png = readFileSync(join(root, 'dist/网瘾学园.png'));

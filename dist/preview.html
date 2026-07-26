@@ -602,7 +602,15 @@
       return;
     }
     if (!hasMvu()) {
-      if (tries > 40) { setView('broken'); $('broken-reason').textContent = '酒馆助手已就绪，但 MVU 变量框架未加载（请检查卡内 MVU 加载器脚本与网络）。'; return; }
+      // 官方推荐等待路径：waitGlobalInitialized('Mvu')（TH 声明）；失败或超时回退轮询
+      if (tries === 0 && typeof window.waitGlobalInitialized === 'function') {
+        Promise.race([
+          window.waitGlobalInitialized('Mvu'),
+          new Promise(r => setTimeout(r, 15000)),
+        ]).then(() => boot(1)).catch(() => boot(1));
+        return;
+      }
+      if (tries > 60) { setView('broken'); $('broken-reason').textContent = '酒馆助手已就绪，但 MVU 变量框架未加载（请检查卡内 MVU 加载器脚本与网络）。'; return; }
       setTimeout(() => boot(tries + 1), 250);
       return;
     }
