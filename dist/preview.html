@@ -1,0 +1,448 @@
+<!-- 生成物：离线挽具，勿手改 -->
+<script>
+// ---- 离线挽具桩（页面上下文，先于 shell 执行）----
+(() => {
+  const chat = []; // {role, message, data}
+  const bus = new Map();
+  const chatVars = {};
+  let mvuFrame = null;
+  window.__harness = { chat, get mvuFrame(){ return mvuFrame; } };
+
+  window.getLastMessageId = () => chat.length - 1 + 1 * (chat.length === 0 ? 0 : 0) || (chat.length === 0 ? 0 : chat.length - 1);
+  // 楼层 0 = shell 消息（挽具里虚拟存在）
+  chat.push({ role: 'assistant', message: '[[WYXY_SHELL_MOUNT]]' });
+  window.getLastMessageId = () => chat.length - 1;
+  window.getChatMessages = id => { const i = id < 0 ? chat.length + id : id; return chat[i] ? [chat[i]] : []; };
+  window.getVariables = () => JSON.parse(JSON.stringify(chatVars));
+  window.insertOrAssignVariables = async (patch) => { Object.assign(chatVars, JSON.parse(JSON.stringify(patch))); };
+  window.eventOn = (name, fn) => { (bus.get(name) || bus.set(name, []).get(name)).push(fn); };
+  window.eventEmit = (name, payload) => { (bus.get(name) || []).forEach(fn => { try { fn(payload); } catch (e) {} }); };
+  window.iframe_events = { GENERATION_ENDED: 'ge' };
+  window.tavern_events = { CHARACTER_MESSAGE_RENDERED: 'cmr', CHAT_CHANGED: 'cc' };
+  window.triggerSlash = async cmd => {
+    if (cmd !== '/trigger') return '';
+    // 假生成：800ms 后产出带结算标签的回复并推进假 MVU 帧
+    setTimeout(() => {
+      const n = chat.length;
+      chat.push({ role: 'assistant', message: '（挽具假回复 #' + n + '）走廊尽头的灯还亮着，林晚秋在名单上迟迟没有抬头。\n<结算 效果="一般"/>' });
+      if (!mvuFrame) mvuFrame = { stat_data: { world: { day: 1, ap: 3, parent_pressure: 20, 难度系数: 1, 初始关注: 'linwanqiu' }, girls: Object.fromEntries(['linwanqiu','jiangling','sunian','fangtangtang','guyunlei'].map(k => [k, { 修正值: 25, 信任: 15, 创伤: 0, 心结: 0, 状态: '正常', 标记: { 电疗过: false, 秘密揭示: false }, 结局: null }])), meta: { schema_version: 1, last_settled: null } } };
+      else { const w = mvuFrame.stat_data.world; w.ap = Math.max(0, w.ap - 1); }
+      window.eventEmit(window.iframe_events.GENERATION_ENDED, '');
+      window.eventEmit(window.tavern_events.CHARACTER_MESSAGE_RENDERED, chat.length - 1);
+    }, 800);
+    return '';
+  };
+  window.createChatMessages = async (msgs) => { for (const m of msgs) chat.push(JSON.parse(JSON.stringify(m))); };
+  window.Mvu = { getMvuData: () => (mvuFrame ? JSON.parse(JSON.stringify(mvuFrame)) : { stat_data: null }) };
+})();
+</script>
+<div id="wyxy-app" data-view="loading">
+<style>
+  #wyxy-app {
+    --wy-bg: #14161a; --wy-panel: #1d2026; --wy-panel2: #23262e;
+    --wy-text: #d8dbe2; --wy-dim: #8b8f99; --wy-line: #33363f;
+    --wy-accent: #7aa2f7; --wy-warn: #e0af68; --wy-bad: #f7768e;
+    --wy-radius: 10px; --wy-gap: 10px;
+    box-sizing: border-box; color: var(--wy-text); background: var(--wy-bg);
+    font-family: system-ui, "Microsoft YaHei", sans-serif; font-size: 14px;
+    border-radius: var(--wy-radius); padding: 12px; min-height: 320px;
+  }
+  #wyxy-app *, #wyxy-app *::before, #wyxy-app *::after { box-sizing: border-box; }
+  #wyxy-app [data-view-panel] { display: none; }
+  #wyxy-app[data-view="wizard"] [data-view-panel="wizard"],
+  #wyxy-app[data-view="main"] [data-view-panel="main"],
+  #wyxy-app[data-view="loading"] [data-view-panel="loading"],
+  #wyxy-app[data-view="broken"] [data-view-panel="broken"] { display: block; }
+  #wyxy-app h1 { font-size: 16px; margin: 0 0 10px; letter-spacing: .1em; }
+  #wyxy-app h2 { font-size: 14px; margin: 0 0 8px; color: var(--wy-accent); }
+  #wyxy-app fieldset { border: 1px solid var(--wy-line); border-radius: var(--wy-radius); margin: 0 0 var(--wy-gap); padding: 8px 10px; }
+  #wyxy-app legend { color: var(--wy-dim); padding: 0 4px; font-size: 12px; }
+  #wyxy-app .wy-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  #wyxy-app .wy-opts label { display: inline-flex; align-items: center; gap: 4px; padding: 8px 10px; min-height: 40px;
+    border: 1px solid var(--wy-line); border-radius: 8px; cursor: pointer; background: var(--wy-panel); }
+  #wyxy-app .wy-opts label:has(input:checked) { border-color: var(--wy-accent); background: var(--wy-panel2); }
+  #wyxy-app button { color: var(--wy-text); background: var(--wy-panel2); border: 1px solid var(--wy-line);
+    border-radius: 8px; padding: 10px 14px; min-height: 42px; cursor: pointer; font-size: 14px; }
+  #wyxy-app button:hover:not(:disabled) { border-color: var(--wy-accent); }
+  #wyxy-app button:focus-visible { outline: 2px solid var(--wy-accent); outline-offset: 1px; }
+  #wyxy-app button:disabled { opacity: .45; cursor: not-allowed; }
+  #wyxy-app button.wy-primary { background: var(--wy-accent); color: #10131a; border-color: var(--wy-accent); font-weight: 600; }
+  #wyxy-app .wy-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+    border: 1px solid var(--wy-line); border-radius: var(--wy-radius); padding: 8px 10px; margin-bottom: var(--wy-gap);
+    background: var(--wy-panel); font-variant-numeric: tabular-nums; }
+  #wyxy-app .wy-top b { color: var(--wy-accent); font-weight: 600; }
+  #wyxy-app .wy-pressure { flex: 1 1 120px; min-width: 0; display: flex; align-items: center; gap: 6px; }
+  #wyxy-app .wy-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--wy-panel2); overflow: hidden; }
+  #wyxy-app .wy-bar > i { display: block; height: 100%; background: var(--wy-warn); width: 0; }
+  #wyxy-app .wy-story { border: 1px solid var(--wy-line); border-radius: var(--wy-radius); background: var(--wy-panel);
+    padding: 12px; margin-bottom: var(--wy-gap); max-height: 46vh; overflow-y: auto; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+  #wyxy-app .wy-story:empty::before { content: "（等待剧情……）"; color: var(--wy-dim); }
+  #wyxy-app .wy-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  #wyxy-app .wy-note { color: var(--wy-dim); font-size: 12px; margin-top: 8px; }
+  #wyxy-app .wy-banner { display: none; margin-bottom: var(--wy-gap); border: 1px solid var(--wy-bad); color: var(--wy-bad);
+    border-radius: 8px; padding: 8px 10px; }
+  #wyxy-app .wy-banner[data-show="1"] { display: block; }
+  #wyxy-app .wy-busy { display: none; align-items: center; gap: 8px; color: var(--wy-dim); margin-top: 8px; }
+  #wyxy-app[data-busy="1"] .wy-busy { display: flex; }
+  #wyxy-app[data-busy="1"] .wy-actions button { opacity: .45; pointer-events: none; }
+  #wyxy-app .wy-spin { width: 12px; height: 12px; border: 2px solid var(--wy-dim); border-top-color: var(--wy-accent);
+    border-radius: 50%; animation: wy-spin 1s linear infinite; }
+  @keyframes wy-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #wyxy-app .wy-spin { animation: none; } }
+  #wyxy-app dialog { background: var(--wy-panel); color: var(--wy-text); border: 1px solid var(--wy-line);
+    border-radius: var(--wy-radius); padding: 14px; max-width: min(92%, 420px); }
+  #wyxy-app dialog::backdrop { background: rgba(0,0,0,.55); }
+  #wyxy-app .wy-girls { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 10px; }
+  #wyxy-app .wy-preview { border: 1px dashed var(--wy-line); border-radius: 8px; padding: 10px; margin: var(--wy-gap) 0;
+    color: var(--wy-dim); white-space: pre-wrap; word-break: break-word; }
+  #wyxy-app .wy-foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-top: 10px; }
+  #wyxy-app .wy-escape { display: inline-flex; gap: 6px; align-items: center; color: var(--wy-dim); font-size: 12px; cursor: pointer; }
+</style>
+
+<section data-view-panel="loading" aria-live="polite">正在连接酒馆助手……</section>
+
+<section data-view-panel="broken">
+  <h1>网瘾学园 · 修正日志</h1>
+  <p class="wy-banner" data-show="1" data-bind="broken-reason">运行环境缺少依赖。</p>
+  <p class="wy-note">本卡需要「酒馆助手（JS-Slash-Runner）」与 MVU 变量框架。原生消息未被隐藏，你可以直接使用酒馆界面继续。</p>
+</section>
+
+<section data-view-panel="wizard">
+  <h1>网瘾学园 · 修正日志 —— 入职登记</h1>
+  <p class="wy-banner" data-bind="wizard-error" role="alert"></p>
+  <form data-bind="wizard-form">
+    <fieldset>
+      <legend>管理理念（影响初始家长压力与全员信任）</legend>
+      <div class="wy-opts" role="radiogroup" aria-label="管理理念">
+        <label><input type="radio" name="理念" value="铁腕">铁腕</label>
+        <label><input type="radio" name="理念" value="平衡" checked>平衡</label>
+        <label><input type="radio" name="理念" value="怀柔">怀柔</label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>难度（行动收益系数）</legend>
+      <div class="wy-opts" role="radiogroup" aria-label="难度">
+        <label><input type="radio" name="难度" value="简单">简单</label>
+        <label><input type="radio" name="难度" value="标准" checked>标准</label>
+        <label><input type="radio" name="难度" value="困难">困难</label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>初次关注对象（首日专属事件）</legend>
+      <div class="wy-opts" role="radiogroup" aria-label="初次关注对象" data-bind="focus-opts"></div>
+    </fieldset>
+    <div class="wy-preview" data-bind="preview" aria-live="polite"></div>
+    <div class="wy-foot">
+      <button type="button" data-act="preview">预览开场</button>
+      <button type="button" class="wy-primary" data-act="confirm" disabled>确认开局</button>
+    </div>
+  </form>
+  <p class="wy-note">确认后将以一条正式的园长开场消息开始第 1 天（草稿会自动保存，预览不写入任何状态）。</p>
+</section>
+
+<section data-view-panel="main">
+  <h1>网瘾学园 · 修正日志</h1>
+  <p class="wy-banner" data-bind="main-error" role="alert"></p>
+  <div class="wy-top" data-bind="topbar">
+    <span>第 <b data-bind="day">–</b>/30 天</span>
+    <span>行动点 <b data-bind="ap">–</b>/3</span>
+    <span class="wy-pressure"><span>家长压力</span><span class="wy-bar"><i data-bind="pressure-bar"></i></span><b data-bind="pressure">–</b></span>
+  </div>
+  <div class="wy-story" data-bind="story" aria-live="polite" aria-label="剧情"></div>
+  <div class="wy-actions" data-bind="actions">
+    <button type="button" data-act="talk">个别谈话</button>
+    <button type="button" data-act="drill">纪律训练</button>
+    <button type="button" class="wy-primary" data-act="endday">结束今天</button>
+  </div>
+  <div class="wy-busy" aria-live="polite"><span class="wy-spin" aria-hidden="true"></span><span data-bind="busy-text">生成中……</span></div>
+  <div class="wy-foot">
+    <span class="wy-note" data-bind="hint"></span>
+    <label class="wy-escape"><input type="checkbox" data-act="escape">显示原生消息</label>
+  </div>
+</section>
+
+<dialog data-bind="picker" aria-label="选择对象">
+  <h2 data-bind="picker-title">选择对象</h2>
+  <div class="wy-girls" data-bind="picker-list"></div>
+  <div class="wy-foot"><button type="button" data-act="picker-cancel">取消</button></div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+  const NS = 'wyxy';
+  const PROTOCOL_VERSION = 1;
+  const GIRLS = {
+    linwanqiu: '林晚秋', jiangling: '江铃', sunian: '苏念',
+    fangtangtang: '方糖糖', guyunlei: '顾云蕾',
+  };
+  const app = document.getElementById('wyxy-app');
+  const $ = sel => app.querySelector(`[data-bind="${sel}"]`);
+  const setView = v => { app.dataset.view = v; };
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2));
+
+  // ---- 依赖探测（契约 §4.7）----
+  const hasTH = () => typeof window.getLastMessageId === 'function' && typeof window.createChatMessages === 'function';
+  const hasMvu = () => typeof window.Mvu === 'object' && window.Mvu && typeof window.Mvu.getMvuData === 'function';
+
+  // ---- GameStateAdapter：只读快照（契约 §4.4，组件不直接摸楼层 API）----
+  const adapter = {
+    lastError: null,
+    snapshot() {
+      try {
+        const lastId = window.getLastMessageId();
+        let stat = null;
+        try {
+          const mvu = window.Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+          if (mvu && mvu.stat_data && mvu.stat_data.world) stat = mvu.stat_data;
+        } catch (e) { /* 楼层无帧则回退 chat 域 */ }
+        if (!stat) {
+          try {
+            const mvu = window.Mvu.getMvuData({ type: 'chat' });
+            if (mvu && mvu.stat_data && mvu.stat_data.world) stat = mvu.stat_data;
+          } catch (e) { /* 保持 null */ }
+        }
+        let story = '';
+        if (lastId > 0) {
+          const msgs = window.getChatMessages(lastId);
+          if (msgs && msgs[0] && msgs[0].role === 'assistant') story = stripSystem(msgs[0].message);
+          else if (lastId > 1) {
+            const prev = window.getChatMessages(lastId - 1);
+            if (prev && prev[0] && prev[0].role === 'assistant') story = stripSystem(prev[0].message);
+          }
+        }
+        return { lastId, stat, story };
+      } catch (e) {
+        this.lastError = e;
+        return null;
+      }
+    },
+  };
+  const stripSystem = t => String(t || '')
+    .replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/g, '')
+    .replace(/<结算[^>]*\/>/g, '')
+    .replace(/<(?:UpdateVariable|结算)[^]*$/, '')
+    .trim();
+
+  // ---- chat-service：全部楼层写操作收口（契约 §4.1）----
+  const chatService = {
+    async sendAction(text, meta) {
+      await window.createChatMessages(
+        [{ role: 'user', message: text, data: { same_floor_ui: { protocol_version: PROTOCOL_VERSION, ...meta } } }],
+        { refresh: 'affected' },
+      );
+      await window.triggerSlash('/trigger');
+    },
+  };
+
+  // ---- 可恢复 UI 状态：开局草稿存 chat 域 same_floor_ui（契约 §4.4）----
+  const draftStore = {
+    async save(draft) {
+      try {
+        await window.insertOrAssignVariables(
+          { same_floor_ui: { protocol_version: PROTOCOL_VERSION, wizard_draft: draft } },
+          { type: 'chat' },
+        );
+      } catch (e) { /* 草稿非关键路径 */ }
+    },
+    load() {
+      try {
+        const v = window.getVariables({ type: 'chat' });
+        const d = v && v.same_floor_ui && v.same_floor_ui.wizard_draft;
+        return d && typeof d === 'object' ? d : null;
+      } catch (e) { return null; }
+    },
+  };
+
+  // ---- busy 链（契约 §4.2：事件+超时对账）----
+  let busyTimer = null;
+  function setBusy(on, text) {
+    app.dataset.busy = on ? '1' : '';
+    if (text) $('busy-text').textContent = text;
+    clearTimeout(busyTimer);
+    if (on) busyTimer = setTimeout(() => { setBusy(false); showError('main-error', '生成超时或事件漏收，已按当前楼层对账。'); refresh(); }, 120000);
+  }
+  function showError(slot, msg) {
+    const el = $(slot);
+    if (!el) return;
+    el.textContent = msg || '';
+    el.dataset.show = msg ? '1' : '';
+  }
+
+  // ---- 渲染 ----
+  function renderMain(snap) {
+    const s = snap.stat;
+    if (s && s.world) {
+      $('day').textContent = s.world.day;
+      $('ap').textContent = s.world.ap;
+      $('pressure').textContent = s.world.parent_pressure;
+      $('pressure-bar').style.width = Math.max(0, Math.min(100, +s.world.parent_pressure || 0)) + '%';
+      $('hint').textContent = s.world.ap <= 0 ? '行动点已耗尽——结束今天，进入夜晚。' : '';
+      const apEmpty = s.world.ap <= 0;
+      for (const b of app.querySelectorAll('[data-act="talk"],[data-act="drill"]')) b.disabled = apEmpty;
+    } else {
+      $('hint').textContent = '（变量尚未初始化——等待第一轮生成完成）';
+    }
+    $('story').textContent = snap.story || '';
+  }
+
+  let refreshQueued = false;
+  function refresh() {
+    if (refreshQueued) return;
+    refreshQueued = true;
+    setTimeout(() => {
+      refreshQueued = false;
+      const snap = adapter.snapshot();
+      if (!snap) { showError('main-error', '读取聊天状态失败：' + (adapter.lastError && adapter.lastError.message || '未知错误')); return; }
+      if (snap.lastId === 0) { setView('wizard'); restoreDraft(); }
+      else { setView('main'); renderMain(snap); }
+    }, 150);
+  }
+
+  // ---- 开局向导（契约 §3.2 / §4.3：草稿→预览不写状态→确认冻结→真实开场消息）----
+  const wizardForm = () => $('wizard-form');
+  function readDraft() {
+    const f = new FormData(wizardForm());
+    return { 理念: f.get('理念') || '平衡', 难度: f.get('难度') || '标准', 关注: f.get('关注') || 'linwanqiu' };
+  }
+  function openingMessage(d) {
+    return `【开局设定】理念=${d.理念}；难度=${d.难度}；首位关注=${GIRLS[d.关注] || d.关注}\n\n` +
+      `我在园长办公室签完最后一份交接文件。窗外，操场上五个身影按规定间距站着早训队列。` +
+      `我把「${GIRLS[d.关注] || ''}」的档案抽出来放在桌面最上层——今天，先从她开始。`;
+  }
+  function restoreDraft() {
+    const d = draftStore.load();
+    if (!d) return;
+    for (const [k, v] of Object.entries(d)) {
+      const input = wizardForm().querySelector(`input[name="${k}"][value="${v}"]`);
+      if (input) input.checked = true;
+    }
+  }
+  let confirming = false;
+  async function confirmOpening() {
+    if (confirming) return; // 防重复提交（契约 §7）
+    confirming = true;
+    const btn = app.querySelector('[data-act="confirm"]');
+    btn.disabled = true;
+    showError('wizard-error', '');
+    try {
+      const d = readDraft(); // 确认冻结
+      const before = window.getLastMessageId();
+      if (before !== 0) throw new Error('聊天状态已变化，请刷新后重试');
+      await chatService.sendAction(openingMessage(d), { action_id: uid(), type: '开局设定', opening: d });
+      setView('main');
+      setBusy(true, '开局生成中……');
+    } catch (e) {
+      showError('wizard-error', '开局提交失败：' + (e && e.message || e) + '（草稿已保留，可重试）');
+      btn.disabled = false;
+      confirming = false;
+    }
+  }
+
+  // ---- 行动（契约 §4.2 主链）----
+  const ACTION_TEXT = {
+    talk: k => `我把${GIRLS[k]}单独叫到谈话室。没有记录本，没有评分表——只是谈谈。`,
+    drill: k => `我安排${GIRLS[k]}参加下午的纪律训练，按机构标准流程执行。`,
+    endday: () => `今天的安排到此为止。我在值班日志上签字，宣布熄灯就寝。`,
+  };
+  const ACTION_META = { talk: '个别谈话', drill: '纪律训练', endday: '结束今天' };
+  async function sendAction(kind, girlKey) {
+    try {
+      setBusy(true, '生成中……');
+      await chatService.sendAction(
+        ACTION_TEXT[kind](girlKey),
+        { action_id: uid(), type: ACTION_META[kind], target: girlKey || null },
+      );
+    } catch (e) {
+      setBusy(false);
+      showError('main-error', '行动发送失败：' + (e && e.message || e));
+    }
+  }
+
+  // ---- 选人 Modal ----
+  let pickerKind = null;
+  function openPicker(kind) {
+    pickerKind = kind;
+    $('picker-title').textContent = kind === 'talk' ? '与谁谈话？' : '安排谁训练？';
+    const list = $('picker-list');
+    list.textContent = '';
+    const snap = adapter.snapshot();
+    for (const [key, name] of Object.entries(GIRLS)) {
+      const finished = snap && snap.stat && snap.stat.girls && snap.stat.girls[key] && snap.stat.girls[key].结局;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = name + (finished ? '（已离园）' : '');
+      b.disabled = !!finished;
+      b.addEventListener('click', () => { $('picker').close(); sendAction(pickerKind, key); });
+      list.appendChild(b);
+    }
+    $('picker').showModal();
+  }
+
+  // ---- 事件接线 ----
+  function wire() {
+    app.addEventListener('click', ev => {
+      const act = ev.target && ev.target.closest && ev.target.closest('[data-act]');
+      if (!act) return;
+      switch (act.dataset.act) {
+        case 'preview': {
+          const d = readDraft();
+          $('preview').textContent = '开场消息预览（只读，不写入状态）：\n\n' + openingMessage(d);
+          app.querySelector('[data-act="confirm"]').disabled = false;
+          break;
+        }
+        case 'confirm': confirmOpening(); break;
+        case 'talk': openPicker('talk'); break;
+        case 'drill': openPicker('drill'); break;
+        case 'endday': sendAction('endday'); break;
+        case 'picker-cancel': $('picker').close(); break;
+      }
+    });
+    wizardForm().addEventListener('change', () => {
+      draftStore.save(readDraft());
+      app.querySelector('[data-act="confirm"]').disabled = true; // 改动后须重新预览
+      $('preview').textContent = '';
+    });
+    app.querySelector('[data-act="escape"]').addEventListener('change', ev => {
+      try { window.eventEmit(`${NS}:escape`, { show_native: !!ev.target.checked }); } catch (e) { /* bridge 缺席时静默 */ }
+    });
+    // 生成结束 → 对账刷新；busy 解锁（契约 §4.2）
+    try {
+      window.eventOn(window.iframe_events.GENERATION_ENDED, () => { setBusy(false); refresh(); });
+      window.eventOn(window.tavern_events.CHARACTER_MESSAGE_RENDERED, () => refresh());
+      window.eventOn(window.tavern_events.CHAT_CHANGED, () => refresh());
+    } catch (e) { /* 事件面缺席时依赖超时对账 */ }
+    // 心跳 → bridge 维持 presentation mode（契约 §4.5）
+    setInterval(() => { try { window.eventEmit(`${NS}:heartbeat`, {}); } catch (e) {} }, 3000);
+  }
+
+  // ---- 启动：仅凭持久数据重建（契约 §4.4 红线）----
+  function boot(tries) {
+    if (!hasTH()) {
+      if (tries > 40) { setView('broken'); $('broken-reason').textContent = '未检测到酒馆助手 API（iframe 注入失败或扩展未启用）。'; return; }
+      setTimeout(() => boot(tries + 1), 250);
+      return;
+    }
+    if (!hasMvu()) {
+      if (tries > 40) { setView('broken'); $('broken-reason').textContent = '酒馆助手已就绪，但 MVU 变量框架未加载（请检查卡内 MVU 加载器脚本与网络）。'; return; }
+      setTimeout(() => boot(tries + 1), 250);
+      return;
+    }
+    // 关注对象选项（含默认选中）
+    const focus = $('focus-opts');
+    focus.textContent = '';
+    let first = true;
+    for (const [key, name] of Object.entries(GIRLS)) {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'radio'; input.name = '关注'; input.value = key; input.checked = first; first = false;
+      label.appendChild(input); label.appendChild(document.createTextNode(name));
+      focus.appendChild(label);
+    }
+    wire();
+    refresh();
+  }
+  boot(0);
+})();
+</script>
+</div>

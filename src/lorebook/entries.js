@@ -3,14 +3,11 @@
 // 同代更新模式下标记不生效，仅保留双兼容。
 // strategy 全部蓝灯 constant；分阶段人设条目由 bridge 切 enabled（契约 §3.3 定案）。
 
-import { buildInitialStatData, GIRL_NAMES } from '../mvu/schema.js';
+import { buildInitialStatData } from '../mvu/schema.js';
+import { personaEntryName } from './stages.js';
+export { STAGES, STAGE_OF_KNOT, personaEntryName } from './stages.js';
 
 const POS = { BEFORE_CHAR: 0, AT_DEPTH: 4 };
-
-// ---- 分阶段映射（心结值 → 阶段条目后缀）：0=抵触 1=试探 2/3=敞开 4=蜕变 ----
-export const STAGE_OF_KNOT = knot => (knot >= 4 ? '蜕变' : knot >= 2 ? '敞开' : knot >= 1 ? '试探' : '抵触');
-export const STAGES = ['抵触', '试探', '敞开', '蜕变'];
-export const personaEntryName = (key, stage) => `${GIRL_NAMES[key]}·${stage} [mvu_plot]`;
 
 export function buildEntries() {
   const entries = [];
