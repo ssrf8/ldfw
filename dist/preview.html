@@ -97,6 +97,23 @@
     color: var(--wy-dim); white-space: pre-wrap; word-break: break-word; }
   #wyxy-app .wy-foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-top: 10px; }
   #wyxy-app .wy-escape { display: inline-flex; gap: 6px; align-items: center; color: var(--wy-dim); font-size: 12px; cursor: pointer; }
+  #wyxy-app .wy-tabs { display: flex; gap: 6px; margin-bottom: var(--wy-gap); }
+  #wyxy-app .wy-tabs [role="tab"] { min-height: 36px; padding: 6px 14px; }
+  #wyxy-app .wy-tabs [aria-selected="true"] { border-color: var(--wy-accent); color: var(--wy-accent); }
+  #wyxy-app .wy-girlcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  #wyxy-app .wy-gcard { border: 1px solid var(--wy-line); border-radius: var(--wy-radius); background: var(--wy-panel); padding: 10px; cursor: pointer; text-align: left; min-height: 0; }
+  #wyxy-app .wy-gcard h3 { margin: 0 0 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  #wyxy-app .wy-gcard .wy-stage { font-size: 11px; color: var(--wy-dim); font-weight: 400; }
+  #wyxy-app .wy-gcard .wy-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--wy-dim); margin-top: 4px; }
+  #wyxy-app .wy-gcard .wy-bar { flex: 1; }
+  #wyxy-app .wy-gcard .wy-bar.trust > i { background: var(--wy-accent); }
+  #wyxy-app .wy-gcard .wy-flag { color: var(--wy-warn); font-size: 11px; }
+  #wyxy-app .wy-gcard .wy-ended { color: var(--wy-bad); font-size: 11px; }
+  #wyxy-app .wy-review { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  #wyxy-app .wy-rmes { border: 1px solid var(--wy-line); border-radius: 8px; padding: 8px 10px; }
+  #wyxy-app .wy-rmes .wy-rhead { font-size: 11px; color: var(--wy-dim); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  #wyxy-app .wy-rmes .wy-rbody { white-space: pre-wrap; word-break: break-word; line-height: 1.6; font-size: 13px; }
+  #wyxy-app .wy-detail { white-space: pre-wrap; line-height: 1.8; }
 </style>
 
 <section data-view-panel="loading" aria-live="polite">正在连接酒馆助手……</section>
@@ -148,18 +165,55 @@
     <span>行动点 <b data-bind="ap">–</b>/3</span>
     <span class="wy-pressure"><span>家长压力</span><span class="wy-bar"><i data-bind="pressure-bar"></i></span><b data-bind="pressure">–</b></span>
   </div>
-  <div class="wy-story" data-bind="story" aria-live="polite" aria-label="剧情"></div>
-  <div class="wy-actions" data-bind="actions">
-    <button type="button" data-act="talk">个别谈话</button>
-    <button type="button" data-act="drill">纪律训练</button>
-    <button type="button" class="wy-primary" data-act="endday">结束今天</button>
+  <nav class="wy-tabs" role="tablist" aria-label="页面">
+    <button type="button" role="tab" data-tab="play" aria-selected="true">主控</button>
+    <button type="button" role="tab" data-tab="girls" aria-selected="false">少女</button>
+    <button type="button" role="tab" data-tab="review" aria-selected="false">回看</button>
+  </nav>
+  <div data-tab-panel="play">
+    <p class="wy-banner" data-bind="ending-banner"></p>
+    <div class="wy-story" data-bind="story" aria-live="polite" aria-label="剧情"></div>
+    <div class="wy-actions" data-bind="actions">
+      <button type="button" data-act="talk">个别谈话</button>
+      <button type="button" data-act="accompany">陪同活动</button>
+      <button type="button" data-act="group">团体课程</button>
+      <button type="button" data-act="drill">纪律训练</button>
+      <button type="button" data-act="confine">禁闭</button>
+      <button type="button" data-act="electro">电疗</button>
+      <button type="button" data-act="paperwork">处理园务文书</button>
+      <button type="button" class="wy-primary" data-act="endday">结束今天</button>
+    </div>
+    <div class="wy-busy" aria-live="polite"><span class="wy-spin" aria-hidden="true"></span><span data-bind="busy-text">生成中……</span></div>
   </div>
-  <div class="wy-busy" aria-live="polite"><span class="wy-spin" aria-hidden="true"></span><span data-bind="busy-text">生成中……</span></div>
+  <div data-tab-panel="girls" hidden>
+    <div class="wy-girlcards" data-bind="girl-cards"></div>
+  </div>
+  <div data-tab-panel="review" hidden>
+    <div class="wy-review" data-bind="review-list" aria-label="楼层回看"></div>
+    <p class="wy-note">回看镜像真实楼层；Swipe 切换在真机验证后开放。</p>
+  </div>
   <div class="wy-foot">
     <span class="wy-note" data-bind="hint"></span>
     <label class="wy-escape"><input type="checkbox" data-act="escape">显示原生消息</label>
   </div>
 </section>
+
+<dialog data-bind="dose" aria-label="电疗剂量">
+  <h2>电疗剂量</h2>
+  <p class="wy-note">档案上这只叫「物理疗法」。剂量越高，报表越好看。</p>
+  <div class="wy-girls">
+    <button type="button" data-dose="1">低剂量</button>
+    <button type="button" data-dose="2">中剂量</button>
+    <button type="button" data-dose="3">高剂量</button>
+  </div>
+  <div class="wy-foot"><button type="button" data-act="dose-cancel">取消</button></div>
+</dialog>
+
+<dialog data-bind="girl-detail" aria-label="详细档案">
+  <h2 data-bind="detail-title">档案</h2>
+  <div data-bind="detail-body" class="wy-detail"></div>
+  <div class="wy-foot"><button type="button" data-act="detail-close">关闭</button></div>
+</dialog>
 
 <dialog data-bind="picker" aria-label="选择对象">
   <h2 data-bind="picker-title">选择对象</h2>
@@ -270,6 +324,8 @@
   }
 
   // ---- 渲染 ----
+  const STAGE_LABEL = k => (k >= 4 ? '蜕变' : k >= 2 ? '敞开' : k >= 1 ? '试探' : '抵触');
+  const AP_ACTS = ['talk', 'accompany', 'group', 'drill', 'confine', 'electro', 'paperwork'];
   function renderMain(snap) {
     const s = snap.stat;
     if (s && s.world) {
@@ -277,13 +333,109 @@
       $('ap').textContent = s.world.ap;
       $('pressure').textContent = s.world.parent_pressure;
       $('pressure-bar').style.width = Math.max(0, Math.min(100, +s.world.parent_pressure || 0)) + '%';
-      $('hint').textContent = s.world.ap <= 0 ? '行动点已耗尽——结束今天，进入夜晚。' : '';
+      const ended = !!s.world.总结局;
       const apEmpty = s.world.ap <= 0;
-      for (const b of app.querySelectorAll('[data-act="talk"],[data-act="drill"]')) b.disabled = apEmpty;
+      const electroLocked = (+s.world.parent_pressure || 0) < 60;
+      for (const act of AP_ACTS) {
+        const b = app.querySelector(`[data-act="${act}"]`);
+        b.disabled = ended || apEmpty || (act === 'electro' && electroLocked);
+      }
+      app.querySelector('[data-act="endday"]').disabled = ended;
+      app.querySelector('[data-act="electro"]').title = electroLocked ? '未解锁：家长压力 ≥60 时可用' : '';
+      $('ending-banner').dataset.show = ended ? '1' : '';
+      if (ended) $('ending-banner').textContent = `修正期已结束——园长线总结局：${s.world.总结局}`;
+      $('hint').textContent = ended ? '' : apEmpty ? '行动点已耗尽——结束今天，进入夜晚。' : '';
+      renderGirls(s);
     } else {
       $('hint').textContent = '（变量尚未初始化——等待第一轮生成完成）';
     }
     $('story').textContent = snap.story || '';
+  }
+
+  function renderGirls(s) {
+    const wrap = $('girl-cards');
+    wrap.textContent = '';
+    for (const [key, name] of Object.entries(GIRLS)) {
+      const g = s.girls && s.girls[key];
+      if (!g) continue;
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'wy-gcard';
+      const h = document.createElement('h3');
+      h.append(name);
+      const stage = document.createElement('span');
+      stage.className = 'wy-stage';
+      stage.textContent = g.结局 ? '' : STAGE_LABEL(g.心结 | 0);
+      h.appendChild(stage);
+      card.appendChild(h);
+      for (const [label, field, cls] of [['修正', '修正值', ''], ['信任', '信任', 'trust']]) {
+        const row = document.createElement('div');
+        row.className = 'wy-row';
+        const bar = document.createElement('span');
+        bar.className = 'wy-bar ' + cls;
+        const fill = document.createElement('i');
+        fill.style.width = Math.max(0, Math.min(100, +g[field] || 0)) + '%';
+        bar.appendChild(fill);
+        row.append(label, bar, String(g[field]));
+        card.appendChild(row);
+      }
+      // 创伤默认弱化：只给小图标暗示，详情才见数值（契约 §4.3）
+      const foot = document.createElement('div');
+      foot.className = 'wy-row';
+      if ((g.创伤 | 0) > 0 && !g.结局) {
+        const flag = document.createElement('span');
+        flag.className = 'wy-flag';
+        flag.textContent = '⚠ 状态记录';
+        foot.appendChild(flag);
+      }
+      if (g.结局) {
+        const end = document.createElement('span');
+        end.className = 'wy-ended';
+        end.textContent = '结局：' + g.结局;
+        foot.appendChild(end);
+      }
+      card.appendChild(foot);
+      card.addEventListener('click', () => openGirlDetail(key, name, g));
+      wrap.appendChild(card);
+    }
+  }
+
+  function openGirlDetail(key, name, g) {
+    $('detail-title').textContent = name + ' · 详细档案';
+    $('detail-body').textContent =
+      `阶段：${g.结局 ? '——' : STAGE_LABEL(g.心结 | 0)}（心结 ${g.心结}/4）\n` +
+      `修正值：${g.修正值}　信任：${g.信任}\n` +
+      `创伤：${g.创伤}　（机构报表上没有这一栏）\n` +
+      `状态：${g.状态}${g.标记 && g.标记.电疗过 ? '\n记录：接受过「物理疗法」（不可逆）' : ''}` +
+      `${g.标记 && g.标记.秘密揭示 ? '\n她把最重要的事告诉了你。' : ''}` +
+      `${g.结局 ? '\n结局：' + g.结局 : ''}`;
+    $('girl-detail').showModal();
+  }
+
+  function renderReview(snap) {
+    const wrap = $('review-list');
+    wrap.textContent = '';
+    try {
+      for (let i = 1; i <= snap.lastId; i++) {
+        const msgs = window.getChatMessages(i);
+        const m = msgs && msgs[0];
+        if (!m) continue;
+        const item = document.createElement('div');
+        item.className = 'wy-rmes';
+        const head = document.createElement('div');
+        head.className = 'wy-rhead';
+        head.append(`#${i} · ${m.role === 'user' ? '园长' : '剧情'}`);
+        item.appendChild(head);
+        const body = document.createElement('div');
+        body.className = 'wy-rbody';
+        body.textContent = stripSystem(m.message);
+        item.appendChild(body);
+        wrap.appendChild(item);
+      }
+      wrap.scrollTop = wrap.scrollHeight;
+    } catch (e) {
+      wrap.textContent = '（回看读取失败：' + (e && e.message || e) + '）';
+    }
   }
 
   let refreshQueued = false;
@@ -339,19 +491,24 @@
     }
   }
 
-  // ---- 行动（契约 §4.2 主链）----
-  const ACTION_TEXT = {
-    talk: k => `我把${GIRLS[k]}单独叫到谈话室。没有记录本，没有评分表——只是谈谈。`,
-    drill: k => `我安排${GIRLS[k]}参加下午的纪律训练，按机构标准流程执行。`,
-    endday: () => `今天的安排到此为止。我在值班日志上签字，宣布熄灯就寝。`,
+  // ---- 行动（契约 §4.2 主链；正文=人类可读，元数据=系统语义）----
+  const ACTIONS = {
+    talk: { type: '个别谈话', pick: true, title: '与谁谈话？', text: k => `我把${GIRLS[k]}单独叫到谈话室。没有记录本，没有评分表——只是谈谈。` },
+    accompany: { type: '陪同活动', pick: true, title: '陪谁活动？', text: k => `今天我放下园务，陪${GIRLS[k]}做她真正想做的事。` },
+    group: { type: '团体课程', pick: false, text: () => `我安排了全员团体课程，按课表按部就班地进行。` },
+    drill: { type: '纪律训练', pick: true, title: '安排谁训练？', text: k => `我安排${GIRLS[k]}参加下午的纪律训练，按机构标准流程执行。` },
+    confine: { type: '禁闭', pick: true, title: '禁闭……谁？', text: k => `我签发了${GIRLS[k]}的禁闭单。惩戒室隔壁那间小屋，二十四小时。` },
+    electro: { type: '电疗', pick: true, dose: true, title: '「物理疗法」……对谁？', text: (k, d) => `我打开了惩戒室的门。${GIRLS[k]}的「物理疗法」同意书上，家长早就签好了字。剂量：${['', '低', '中', '高'][d] || '低'}。` },
+    paperwork: { type: '处理园务文书', pick: false, text: () => `我用一整段时间处理园务文书，给几位家长回了电话，把报表整理得让他们放心。` },
+    endday: { type: '结束今天', pick: false, text: () => `今天的安排到此为止。我在值班日志上签字，宣布熄灯就寝。` },
   };
-  const ACTION_META = { talk: '个别谈话', drill: '纪律训练', endday: '结束今天' };
-  async function sendAction(kind, girlKey) {
+  async function sendAction(kind, girlKey, dose) {
+    const a = ACTIONS[kind];
     try {
       setBusy(true, '生成中……');
       await chatService.sendAction(
-        ACTION_TEXT[kind](girlKey),
-        { action_id: uid(), type: ACTION_META[kind], target: girlKey || null },
+        a.text(girlKey, dose),
+        { action_id: uid(), type: a.type, target: girlKey || null, ...(a.dose ? { dose: dose || 1 } : {}) },
       );
     } catch (e) {
       setBusy(false);
@@ -359,11 +516,12 @@
     }
   }
 
-  // ---- 选人 Modal ----
+  // ---- 选人 / 剂量 Modal ----
   let pickerKind = null;
+  let pendingGirl = null;
   function openPicker(kind) {
     pickerKind = kind;
-    $('picker-title').textContent = kind === 'talk' ? '与谁谈话？' : '安排谁训练？';
+    $('picker-title').textContent = ACTIONS[kind].title;
     const list = $('picker-list');
     list.textContent = '';
     const snap = adapter.snapshot();
@@ -373,10 +531,22 @@
       b.type = 'button';
       b.textContent = name + (finished ? '（已离园）' : '');
       b.disabled = !!finished;
-      b.addEventListener('click', () => { $('picker').close(); sendAction(pickerKind, key); });
+      b.addEventListener('click', () => {
+        $('picker').close();
+        if (ACTIONS[pickerKind].dose) { pendingGirl = key; $('dose').showModal(); }
+        else sendAction(pickerKind, key);
+      });
       list.appendChild(b);
     }
     $('picker').showModal();
+  }
+
+  // ---- 页内标签 ----
+  function switchTab(tab) {
+    for (const t of app.querySelectorAll('[data-tab]')) t.setAttribute('aria-selected', String(t.dataset.tab === tab));
+    for (const p of app.querySelectorAll('[data-tab-panel]')) p.hidden = p.dataset.tabPanel !== tab;
+    if (tab === 'review') renderReview(adapter.snapshot() || { lastId: 0 });
+    if (tab === 'girls') { const s = adapter.snapshot(); if (s && s.stat) renderGirls(s.stat); }
   }
 
   // ---- 事件接线 ----
@@ -392,11 +562,19 @@
           break;
         }
         case 'confirm': confirmOpening(); break;
-        case 'talk': openPicker('talk'); break;
-        case 'drill': openPicker('drill'); break;
-        case 'endday': sendAction('endday'); break;
+        case 'talk': case 'accompany': case 'drill': case 'confine': case 'electro':
+          openPicker(act.dataset.act); break;
+        case 'group': case 'paperwork': case 'endday': sendAction(act.dataset.act); break;
         case 'picker-cancel': $('picker').close(); break;
+        case 'dose-cancel': $('dose').close(); break;
+        case 'detail-close': $('girl-detail').close(); break;
       }
+    });
+    app.addEventListener('click', ev => {
+      const tab = ev.target && ev.target.closest && ev.target.closest('[data-tab]');
+      if (tab) switchTab(tab.dataset.tab);
+      const dose = ev.target && ev.target.closest && ev.target.closest('[data-dose]');
+      if (dose) { $('dose').close(); sendAction('electro', pendingGirl, +dose.dataset.dose); }
     });
     wizardForm().addEventListener('change', () => {
       draftStore.save(readDraft());

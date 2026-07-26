@@ -168,13 +168,36 @@ function nightSettle(statData, events) {
     w.parent_pressure = clamp01(w.parent_pressure + delta);
     events.push(`探视日:均值${Math.round(avg)}:压力${delta > 0 ? '+' : ''}${delta}`);
   }
-  // 第 30 天夜晚 = 评估日结算（阶段 5 实装逐人结局公式；切片先留事件）
-  if (w.day >= TOTAL_DAYS) {
-    events.push('评估日');
+  // 第 30 天夜晚 = 评估日逐人结算 + 园长总结局（契约 §2.4）
+  if (w.day >= TOTAL_DAYS && !w.总结局) {
+    assignEndings(statData, events);
   }
   w.day += 1;
   w.ap = 3;
   events.push(`夜晚结算:day=${w.day}`);
+}
+
+function assignEndings(statData, events) {
+  for (const k of GIRL_KEYS) {
+    const g = statData.girls[k];
+    if (!g || g.结局 !== null) continue; // 崩溃已冻结者不改写
+    if (g.信任 >= 70 && g.心结 >= 4) g.结局 = '蜕变';
+    else if (g.修正值 >= 70 && g.信任 < 40) g.结局 = '假性修正';
+    else g.结局 = '未完成';
+    events.push(`结局:${k}=${g.结局}`);
+  }
+  const count = v => GIRL_KEYS.filter(k => statData.girls[k] && statData.girls[k].结局 === v).length;
+  const collapsed = count('崩溃');
+  const fake = count('假性修正');
+  const grown = count('蜕变');
+  const electroed = GIRL_KEYS.filter(k => statData.girls[k] && statData.girls[k].标记.电疗过).length;
+  let total;
+  if (collapsed >= 2 || (collapsed >= 1 && fake >= 2)) total = '被吞噬';
+  else if (fake >= 3 || electroed >= 3) total = '共犯';
+  else if (grown >= 3 && collapsed === 0) total = '改革者';
+  else total = '未完待续';
+  statData.world.总结局 = total;
+  events.push(`园长总结局:${total}`);
 }
 
 /** 电疗是否解锁（UI/规则共用的只读判断，不写状态） */

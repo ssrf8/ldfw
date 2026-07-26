@@ -42,6 +42,7 @@ export function buildInitialStatData() {
       parent_pressure: 20,
       难度系数: 1.0,
       初始关注: null,
+      总结局: null,
     },
     girls,
     meta: { schema_version: SCHEMA_VERSION, last_settled: null },

@@ -50,7 +50,7 @@ const mapRegex = (r, i) => ({
   replaceString: r.replaceString,
   trimStrings: [], placement: r.placement,
   disabled: !!r.disabled, markdownOnly: !!r.markdownOnly, promptOnly: !!r.promptOnly,
-  runOnEdit: !!r.runOnEdit, substituteRegex: 0, minDepth: null, maxDepth: null,
+  runOnEdit: !!r.runOnEdit, substituteRegex: 0, minDepth: r.minDepth ?? null, maxDepth: null,
 });
 
 export function buildCard() {

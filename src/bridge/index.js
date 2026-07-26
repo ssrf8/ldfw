@@ -50,17 +50,13 @@ function wyxySettleHook(variables /* , variables_before_update */) {
   }
 }
 
-// ---- 心结 → 阶段人设条目切换（契约 §3.3 定案：切 enabled）----
+// ---- 条目同步（契约 §3.3 定案：阶段人设 + 条件内容，决策见 activation.js 纯函数）----
 async function wyxySyncStageEntries(statData) {
   const books = await getCharWorldbookNames('current');
   const bookName = books && (books.primary || (books.additional && books.additional[0]));
   if (!bookName) return;
   const book = await getWorldbook(bookName);
-  const wanted = new Map(); // 条目名 → 应否启用
-  for (const key of Object.keys(statData.girls || {})) {
-    const stage = STAGE_OF_KNOT(statData.girls[key].心结 | 0);
-    for (const s of STAGES) wanted.set(personaEntryName(key, s), s === stage);
-  }
+  const wanted = wantedEntryStates(statData);
   let dirty = false;
   for (const entry of book) {
     if (wanted.has(entry.name) && entry.enabled !== wanted.get(entry.name)) {
@@ -70,7 +66,7 @@ async function wyxySyncStageEntries(statData) {
   }
   if (dirty) {
     await updateWorldbookWith(bookName, () => book);
-    console.info('[wyxy] 阶段条目已同步');
+    console.info('[wyxy] 条目同步完成');
   }
 }
 

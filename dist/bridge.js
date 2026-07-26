@@ -43,6 +43,7 @@ function buildInitialStatData() {
       parent_pressure: 20,
       难度系数: 1.0,
       初始关注: null,
+      总结局: null,
     },
     girls,
     meta: { schema_version: SCHEMA_VERSION, last_settled: null },
@@ -218,13 +219,36 @@ function nightSettle(statData, events) {
     w.parent_pressure = clamp01(w.parent_pressure + delta);
     events.push(`探视日:均值${Math.round(avg)}:压力${delta > 0 ? '+' : ''}${delta}`);
   }
-  // 第 30 天夜晚 = 评估日结算（阶段 5 实装逐人结局公式；切片先留事件）
-  if (w.day >= TOTAL_DAYS) {
-    events.push('评估日');
+  // 第 30 天夜晚 = 评估日逐人结算 + 园长总结局（契约 §2.4）
+  if (w.day >= TOTAL_DAYS && !w.总结局) {
+    assignEndings(statData, events);
   }
   w.day += 1;
   w.ap = 3;
   events.push(`夜晚结算:day=${w.day}`);
+}
+
+function assignEndings(statData, events) {
+  for (const k of GIRL_KEYS) {
+    const g = statData.girls[k];
+    if (!g || g.结局 !== null) continue; // 崩溃已冻结者不改写
+    if (g.信任 >= 70 && g.心结 >= 4) g.结局 = '蜕变';
+    else if (g.修正值 >= 70 && g.信任 < 40) g.结局 = '假性修正';
+    else g.结局 = '未完成';
+    events.push(`结局:${k}=${g.结局}`);
+  }
+  const count = v => GIRL_KEYS.filter(k => statData.girls[k] && statData.girls[k].结局 === v).length;
+  const collapsed = count('崩溃');
+  const fake = count('假性修正');
+  const grown = count('蜕变');
+  const electroed = GIRL_KEYS.filter(k => statData.girls[k] && statData.girls[k].标记.电疗过).length;
+  let total;
+  if (collapsed >= 2 || (collapsed >= 1 && fake >= 2)) total = '被吞噬';
+  else if (fake >= 3 || electroed >= 3) total = '共犯';
+  else if (grown >= 3 && collapsed === 0) total = '改革者';
+  else total = '未完待续';
+  statData.world.总结局 = total;
+  events.push(`园长总结局:${total}`);
 }
 
 /** 电疗是否解锁（UI/规则共用的只读判断，不写状态） */
@@ -256,6 +280,36 @@ function replay(initialStatData, steps) {
 const STAGES = ['抵触', '试探', '敞开', '蜕变'];
 const STAGE_OF_KNOT = knot => (knot >= 4 ? '蜕变' : knot >= 2 ? '敞开' : knot >= 1 ? '试探' : '抵触');
 const personaEntryName = (key, stage) => `${GIRL_NAMES[key]}·${stage} [mvu_plot]`;
+
+// 条目激活决策（纯函数，bridge 与测试共用）—— 契约 §3.3 + 条件内容条目
+// 返回 Map<条目名, 应否启用>；未列出的条目不受 bridge 管理。
+
+const COND = {
+  VISIT: '[mvu_plot]探视日指引',
+  EVAL: '[mvu_plot]评估日指引',
+  COLLAPSE: '[mvu_plot]崩溃警报',
+  DAY1: '[mvu_plot]首日关注事件',
+};
+
+function wantedEntryStates(statData) {
+  const wanted = new Map();
+  const w = statData.world || {};
+  const girls = statData.girls || {};
+  // 分阶段人设：每人恰好 1 条（心结映射）
+  for (const key of GIRL_KEYS) {
+    if (!girls[key]) continue;
+    const stage = STAGE_OF_KNOT(girls[key].心结 | 0);
+    for (const s of STAGES) wanted.set(personaEntryName(key, s), s === stage);
+  }
+  // 条件内容条目
+  const anyTrauma70 = GIRL_KEYS.some(k => girls[k] && girls[k].创伤 >= 70 && girls[k].结局 === null);
+  const anyCollapsed = GIRL_KEYS.some(k => girls[k] && girls[k].结局 === '崩溃');
+  wanted.set(COND.VISIT, (w.day | 0) % 7 === 0 && (w.day | 0) > 0 && !w.总结局);
+  wanted.set(COND.EVAL, (w.day | 0) >= 30 && !w.总结局);
+  wanted.set(COND.COLLAPSE, anyTrauma70 || anyCollapsed);
+  wanted.set(COND.DAY1, (w.day | 0) === 1 && !!w.初始关注);
+  return wanted;
+}
 
 // bridge 常驻脚本（酒馆助手全局脚本）—— 契约 §4.1/§3.5/§4.5
 // 打包时由 tools/build.js 将 schema.js + settle-core.js + entries.js(阶段映射) 与本文件拼为单文件 dist/bridge.js。
@@ -309,17 +363,13 @@ function wyxySettleHook(variables /* , variables_before_update */) {
   }
 }
 
-// ---- 心结 → 阶段人设条目切换（契约 §3.3 定案：切 enabled）----
+// ---- 条目同步（契约 §3.3 定案：阶段人设 + 条件内容，决策见 activation.js 纯函数）----
 async function wyxySyncStageEntries(statData) {
   const books = await getCharWorldbookNames('current');
   const bookName = books && (books.primary || (books.additional && books.additional[0]));
   if (!bookName) return;
   const book = await getWorldbook(bookName);
-  const wanted = new Map(); // 条目名 → 应否启用
-  for (const key of Object.keys(statData.girls || {})) {
-    const stage = STAGE_OF_KNOT(statData.girls[key].心结 | 0);
-    for (const s of STAGES) wanted.set(personaEntryName(key, s), s === stage);
-  }
+  const wanted = wantedEntryStates(statData);
   let dirty = false;
   for (const entry of book) {
     if (wanted.has(entry.name) && entry.enabled !== wanted.get(entry.name)) {
@@ -329,7 +379,7 @@ async function wyxySyncStageEntries(statData) {
   }
   if (dirty) {
     await updateWorldbookWith(bookName, () => book);
-    console.info('[wyxy] 阶段条目已同步');
+    console.info('[wyxy] 条目同步完成');
   }
 }
 

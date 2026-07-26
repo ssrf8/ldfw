@@ -22,4 +22,12 @@ export const REGEX_SCRIPTS = [
     replaceString: '',
     placement: [2], disabled: false, markdownOnly: true, promptOnly: false, runOnEdit: true,
   },
+  {
+    // 提示词瘦身（样例卡实证技巧）：深度≥4 的旧楼层不再携带更新块与结算标签
+    scriptName: '网瘾学园-旧楼层提示词裁剪',
+    findRegex: '/<UpdateVariable>[\\s\\S]*?<\\/UpdateVariable>|<结算[^>]*\\/>/g',
+    replaceString: '',
+    placement: [2], disabled: false, markdownOnly: false, promptOnly: true, runOnEdit: true,
+    minDepth: 4,
+  },
 ];

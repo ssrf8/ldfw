@@ -27,6 +27,7 @@ const bridge = [
   strip(read('src/mvu/schema.js')),
   strip(read('src/bridge/settle-core.js')),
   strip(read('src/lorebook/stages.js')),
+  strip(read('src/lorebook/activation.js')),
   strip(read('src/bridge/index.js')),
 ].join('\n');
 writeFileSync(join(root, 'dist/bridge.js'), bridge);

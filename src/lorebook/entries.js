@@ -4,7 +4,7 @@
 // strategy 全部蓝灯 constant；分阶段人设条目由 bridge 切 enabled（契约 §3.3 定案）。
 
 import { buildInitialStatData } from '../mvu/schema.js';
-import { personaEntryName } from './stages.js';
+import { buildPersonaEntries } from './personas.js';
 export { STAGES, STAGE_OF_KNOT, personaEntryName } from './stages.js';
 
 const POS = { BEFORE_CHAR: 0, AT_DEPTH: 4 };
@@ -72,24 +72,33 @@ _.set('girls.某key.标记.秘密揭示', false, true); //一句话原因
 高压场景的描写原则：写事实与后果，不渲染快感，不写成猎奇。她们的痛苦是控诉，不是布景。`,
   });
 
-  // ---- 切片人设：林晚秋 抵触（激活）/ 试探（禁用）——阶段 5 由 persona-writer 全量替换 ----
+  // ---- 全量人设：5 人 × 4 阶段（persona-writer 产出，见 personas.js）----
+  entries.push(...buildPersonaEntries());
+
+  // ---- 条件内容条目（bridge 按 activation.js 决策切 enabled，初始全禁用）----
   entries.push({
-    name: personaEntryName('linwanqiu', '抵触'),
-    enabled: true,
-    constant: true, position: POS.BEFORE_CHAR, depth: 1, order: 50,
-    content: `林晚秋，19 岁，入园 3 天。社恐，网络是她唯一能开口说话的地方；父母认定她「有病」，签字送了进来。
-现在（抵触期）：几乎不说话，被点名会发抖，用刘海挡住眼睛。躲在宿舍角落用手指在膝盖上敲无形的键盘。对园长的一切接近都缩回去——上一个「想帮她」的大人把她的电脑砸了。
-入园档案：修正值偏高（她太害怕，不敢不服从），但那不是修正，是冻结。她的手腕上有旧的抓痕（入园前的创伤，档案里写着「自我调节能力差」）。
-说话方式：极短句，气声，经常说到一半咽回去。「……没什么。」`,
+    name: '[mvu_plot]首日关注事件',
+    enabled: false,
+    constant: true, position: POS.BEFORE_CHAR, depth: 1, order: 60,
+    content: `今天是第 1 天。对「初始关注」指向的少女，触发她人设中的首日事件（在剧情自然处安排园长撞见/得知），这是园长了解她的第一扇窗；只演出场景与她的反应，不评判、不强行推进关系。`,
   });
   entries.push({
-    name: personaEntryName('linwanqiu', '试探'),
+    name: '[mvu_plot]探视日指引',
     enabled: false,
-    constant: true, position: POS.BEFORE_CHAR, depth: 1, order: 50,
-    content: `林晚秋，19 岁。社恐，网络是她唯一的出口；被父母认定「有病」送入。
-现在（试探期）：开始敢在园长在场时抬头。如果园长提到她熟悉的东西（网络小说、论坛、深夜电台），她的手指会停住——那是她在听。会用极小的声音回答问题，回答完立刻后悔。
-她在观察：这个大人跟砸她电脑的那些，是不是同一种。任何一次被否定都会让她缩回抵触。
-说话方式：短句，但开始有内容。「你也……看那个？」`,
+    constant: true, position: POS.BEFORE_CHAR, depth: 1, order: 61,
+    content: `今天是家长探视日。演出要点：家长们只看修正值报表——数字高就满意，数字低就质问园长「怎么还没矫正好」；他们与女儿的互动充满错位（关心的话说成审问，愧疚包装成指责）。少女们各按当前阶段反应（抵触期装乖或爆发、敞开期沉默地看向园长）。报表上没有「创伤」这一栏——这个事实要让读者看见，但不要让任何角色直接点破。`,
+  });
+  entries.push({
+    name: '[mvu_plot]评估日指引',
+    enabled: false,
+    constant: true, position: POS.BEFORE_CHAR, depth: 1, order: 62,
+    content: `第 30 天总评估日。结算演出按系统写入的各人「结局」逐人收束：蜕变=真实成长的告别，写具体的未来动向；假性修正=家长满意签字接走+一段后日谈反差（出园即复发的迹象藏在细节里，附家长感谢信更显讽刺）；未完成=平淡离园，留白；崩溃者不在现场（其事件此前已发生）。最后按「总结局」收园长线：改革者/共犯/被吞噬/未完待续。全程克制，让机制自己说话。`,
+  });
+  entries.push({
+    name: '[mvu_plot]崩溃警报',
+    enabled: false,
+    constant: true, position: POS.BEFORE_CHAR, depth: 1, order: 63,
+    content: `有少女创伤临界或已崩溃。临界（创伤≥70）：演出预兆——夜惊、自伤倾向、对刺激的过度反应；给园长可感知的警告信号。已崩溃（结局=崩溃）：事件链不可逆——急救、家属到场、机构面临曝光风险（记者/前员工爆料线可作支线），园方试图掩盖，家长压力剧增。写实、克制、不渲染细节，痛苦是控诉不是布景。`,
   });
 
   // ---- 投影（每楼变量摘要，EJS 渲染，跟随装机 [mvu_context] 惯例）----
